@@ -2,28 +2,63 @@
 
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator
 
 import snowflake.connector
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from dotenv import load_dotenv
 from snowflake.connector import SnowflakeConnection
 from snowflake.connector.errors import DatabaseError, ProgrammingError
 
 load_dotenv()
 
+
+def _get_secret(key: str) -> str | None:
+    """Get secret from Streamlit secrets or environment variables."""
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return os.getenv(key)
+
+
+def _get_private_key():
+    """Load private key for key-pair authentication."""
+    # Try to get from Streamlit secrets first (base64 encoded)
+    key_content = _get_secret("SNOWFLAKE_PRIVATE_KEY")
+    if key_content:
+        import base64
+        key_bytes = base64.b64decode(key_content)
+    else:
+        # Fall back to local file
+        key_path = Path(__file__).parent.parent / "rsa_key.p8"
+        with open(key_path, "rb") as f:
+            key_bytes = f.read()
+
+    private_key = serialization.load_pem_private_key(
+        key_bytes,
+        password=None,
+        backend=default_backend()
+    )
+    return private_key
+
 # Query timeout in seconds (55s to leave margin for 60s total)
 QUERY_TIMEOUT = 55
 
 
 def _get_config() -> dict:
-    """Load Snowflake configuration from environment variables."""
+    """Load Snowflake configuration from environment variables or Streamlit secrets."""
     return {
-        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-        "user": os.getenv("SNOWFLAKE_USER"),
-        "password": os.getenv("SNOWFLAKE_PASSWORD"),
-        "database": os.getenv("SNOWFLAKE_DATABASE"),
-        "schema": os.getenv("SNOWFLAKE_SCHEMA"),
-        "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
+        "account": _get_secret("SNOWFLAKE_ACCOUNT"),
+        "user": _get_secret("SNOWFLAKE_USER"),
+        "private_key": _get_private_key(),
+        "database": _get_secret("SNOWFLAKE_DATABASE"),
+        "schema": _get_secret("SNOWFLAKE_SCHEMA"),
+        "warehouse": _get_secret("SNOWFLAKE_WAREHOUSE"),
     }
 
 

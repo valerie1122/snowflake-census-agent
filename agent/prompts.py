@@ -5,7 +5,7 @@ from typing import Generator
 import anthropic
 
 # Answer Generator constants
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-opus-4-5-20251101"
 MAX_TOKENS = 500
 MAX_RESULTS_TO_SHOW = 20  # Truncate results
 

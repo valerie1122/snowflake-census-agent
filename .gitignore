@@ -1,10 +1,30 @@
+# Environment
 .env
+rsa_key.p8
+rsa_key.pub
+.venv/
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
-.DS_Store
-venv/
-.venv/
+*.pyo
 *.egg-info/
 dist/
 build/
 .pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+streamlit.log

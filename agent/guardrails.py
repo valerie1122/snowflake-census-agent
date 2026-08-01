@@ -4,6 +4,17 @@ import os
 
 import anthropic
 
+
+def _get_secret(key: str) -> str | None:
+    """Get secret from Streamlit secrets or environment variables."""
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return os.getenv(key)
+
 SYSTEM_PROMPT = """You are a query validator for a US Census data assistant.
 Your job is to determine if a user's question is about US population/demographic data.
 
@@ -45,10 +56,10 @@ def check_query(query: str) -> tuple[bool, str | None]:
         return (False, "Hello! I'm a US Census data assistant. Ask me about population, income, housing, education, or other demographic topics in the United States.")
 
     try:
-        client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        client = anthropic.Anthropic(api_key=_get_secret("ANTHROPIC_API_KEY"))
 
         response = client.messages.create(
-            model="claude-haiku-4-20250514",
+            model="claude-opus-4-5-20251101",
             max_tokens=100,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": query}],

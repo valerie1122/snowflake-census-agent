@@ -6,7 +6,7 @@ import anthropic
 
 from db.connector import execute_query_safe
 
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-opus-4-5-20251101"
 MAX_TOKENS = 1000
 MAX_HISTORY_MESSAGES = 10  # 5 turns
 
@@ -22,8 +22,10 @@ SYSTEM_PROMPT = """You are a SQL expert for US Census Bureau data. Generate Snow
 2. **Primary key**: `CENSUS_BLOCK_GROUP` format is `{{state_fips_2}}{{county_fips_3}}{{tract}}{{block}}`
 3. **Field suffixes**: `e` = estimate, `m` = margin of error. Always use `e` fields for values.
 4. **Aggregation**: Data is at Census Block Group level. For state/county totals, use SUM().
-5. **State filtering**: Use `CENSUS_BLOCK_GROUP LIKE '{{state_fips}}%'` to filter by state.
-6. **Table names need quotes**: Always quote table names like `"{year}_CBG_B01"` (they start with numbers)
+5. **State filtering**: Use `"CENSUS_BLOCK_GROUP" LIKE '{{state_fips}}%'` to filter by state.
+6. **CRITICAL - Quote ALL identifiers**: Snowflake is case-sensitive. Always quote table names AND column names with double quotes.
+   - Table names: `"{year}_CBG_B01"`
+   - Column names: `"B01001e1"`, `"CENSUS_BLOCK_GROUP"` (all columns need quotes)
 
 ## Output Format
 
@@ -40,10 +42,10 @@ Return ONLY valid SQL. No explanations, no markdown, no backticks. Just the raw 
 ## Examples
 
 User: "What is the total population of California?"
-SQL: SELECT SUM(B01001e1) as total_population FROM "{year}_CBG_B01" WHERE CENSUS_BLOCK_GROUP LIKE '06%'
+SQL: SELECT SUM("B01001e1") as total_population FROM "{year}_CBG_B01" WHERE "CENSUS_BLOCK_GROUP" LIKE '06%'
 
 User: "Compare median income in Texas and Florida"
-SQL: SELECT CASE WHEN CENSUS_BLOCK_GROUP LIKE '48%' THEN 'Texas' ELSE 'Florida' END as state, SUM(B19013e1 * B19001e1) / NULLIF(SUM(B19001e1), 0) as weighted_median_income FROM "{year}_CBG_B19" WHERE CENSUS_BLOCK_GROUP LIKE '48%' OR CENSUS_BLOCK_GROUP LIKE '12%' GROUP BY CASE WHEN CENSUS_BLOCK_GROUP LIKE '48%' THEN 'Texas' ELSE 'Florida' END"""
+SQL: SELECT CASE WHEN "CENSUS_BLOCK_GROUP" LIKE '48%' THEN 'Texas' ELSE 'Florida' END as state, SUM("B19013e1" * "B19001e1") / NULLIF(SUM("B19001e1"), 0) as weighted_median_income FROM "{year}_CBG_B19" WHERE "CENSUS_BLOCK_GROUP" LIKE '48%' OR "CENSUS_BLOCK_GROUP" LIKE '12%' GROUP BY CASE WHEN "CENSUS_BLOCK_GROUP" LIKE '48%' THEN 'Texas' ELSE 'Florida' END"""
 
 FIX_SQL_PROMPT = """The following SQL query failed with this error:
 
