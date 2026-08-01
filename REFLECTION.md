@@ -199,11 +199,34 @@ I chose a **mock-heavy unit testing** strategy with 50 tests covering:
 7. **Documentation**: README, REFLECTION
 8. **Deployment**: Streamlit Cloud with key-pair auth
 
-**AI Tools Used**: Claude Code for code generation, debugging, and iteration. The AI helped with:
-- Snowflake connector authentication issues (MFA → key-pair)
-- Prompt engineering for SQL generation
-- Test scaffolding
-- Documentation writing
+## AI Tools Usage
+
+I used **Claude Code** (Claude Opus 4.5) extensively throughout this project. Here's how:
+
+### What AI Helped With
+- **Architecture design**: Discussed pipeline structure (guardrails → router → SQL → answer)
+- **Snowflake authentication debugging**: Solved MFA issues, switched to key-pair auth
+- **Prompt engineering**: Iterated on SQL generator prompts (quoting identifiers, examples)
+- **Code generation**: Initial implementations of each module
+- **Test writing**: Generated 50 unit/integration tests with proper mocking
+- **Documentation**: README structure, REFLECTION content
+
+### What I Did Manually
+- **Decision making**: Chose Streamlit over FastAPI, Text-to-SQL over RAG
+- **Requirements interpretation**: Decided what "ambiguous query" means
+- **Quality review**: Verified generated code, fixed edge cases
+- **Deployment configuration**: Streamlit Cloud secrets, GitHub setup
+
+### How I Used It Effectively
+1. **Iterative refinement**: Started with basic implementations, then added error handling
+2. **Debugging partner**: When Snowflake MFA failed, worked through solutions together
+3. **Time optimization**: AI handled boilerplate (tests, docs) so I could focus on architecture
+4. **Prompt iteration**: Refined SQL generator prompts based on actual query failures
+
+### Lessons Learned
+- AI excels at generating boilerplate but needs human judgment for architecture
+- Debugging complex auth issues (MFA, key-pair) required back-and-forth iteration
+- Clear requirements lead to better AI output - vague requests get vague code
 
 ## What I Learned
 
