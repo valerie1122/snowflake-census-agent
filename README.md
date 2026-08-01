@@ -2,6 +2,12 @@
 
 An AI-powered chat assistant that answers natural language questions about US Census demographic data, built with Streamlit, Snowflake, and Claude.
 
+## Live Demo
+
+**URL**: https://app-census-agent-2xw8tvr4lzc2ndukfkvp9d.streamlit.app
+
+No authentication required - just open and ask questions!
+
 ## Features
 
 - **Natural Language Interface**: Ask questions in plain English about US population, income, education, housing, veterans, and more
