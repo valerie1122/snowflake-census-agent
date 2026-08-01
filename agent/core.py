@@ -8,6 +8,45 @@ from agent.sql_generator import generate_and_execute
 from agent.prompts import generate_answer_stream
 
 
+# Keywords that suggest a data query (need location context)
+DATA_KEYWORDS = [
+    "population", "income", "median", "average", "how many", "percent",
+    "poverty", "education", "employed", "unemployment", "housing", "rent",
+    "veteran", "insurance", "commute"
+]
+
+
+def _is_ambiguous_query(question: str, detected_states: list, detected_cities: list) -> tuple[bool, str | None]:
+    """
+    Check if query is ambiguous and needs clarification.
+
+    Returns:
+        (is_ambiguous, clarification_message)
+    """
+    question_lower = question.lower()
+
+    # Check if it's a data query (contains data keywords)
+    is_data_query = any(kw in question_lower for kw in DATA_KEYWORDS)
+
+    # If it's a data query but no location specified
+    if is_data_query and not detected_states and not detected_cities:
+        # Check if user explicitly asks for national/US data
+        national_keywords = ["national", "united states", "us total", "country", "nationwide", "america"]
+        if any(kw in question_lower for kw in national_keywords):
+            return False, None  # User wants national data, not ambiguous
+
+        return True, (
+            "I can help with that! To give you the most relevant data, "
+            "could you specify a location? For example:\n"
+            "- A state: \"...in California\" or \"...in TX\"\n"
+            "- A city: \"...in Seattle\" or \"...in Miami\"\n"
+            "- Or say \"nationwide\" for US totals\n\n"
+            "What area are you interested in?"
+        )
+
+    return False, None
+
+
 def process_message(
     user_message: str,
     conversation_history: list[dict],
@@ -41,6 +80,17 @@ def process_message(
 
     # Step 2: Topic routing
     route_result = route_question(user_message)
+
+    # Step 2.5: Check for ambiguous queries
+    is_ambiguous, clarification = _is_ambiguous_query(
+        user_message,
+        route_result["detected_states"],
+        route_result["detected_cities"]
+    )
+    if is_ambiguous:
+        def clarification_generator():
+            yield clarification
+        return clarification_generator(), None
 
     # Step 3: SQL generation and execution
     results, sql_used, error = generate_and_execute(
