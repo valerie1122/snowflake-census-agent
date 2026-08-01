@@ -52,14 +52,22 @@ QUERY_TIMEOUT = 55
 
 def _get_config() -> dict:
     """Load Snowflake configuration from environment variables or Streamlit secrets."""
-    return {
+    config = {
         "account": _get_secret("SNOWFLAKE_ACCOUNT"),
         "user": _get_secret("SNOWFLAKE_USER"),
-        "private_key": _get_private_key(),
         "database": _get_secret("SNOWFLAKE_DATABASE"),
         "schema": _get_secret("SNOWFLAKE_SCHEMA"),
         "warehouse": _get_secret("SNOWFLAKE_WAREHOUSE"),
     }
+
+    # Use password if available, otherwise try key-pair
+    password = _get_secret("SNOWFLAKE_PASSWORD")
+    if password:
+        config["password"] = password
+    else:
+        config["private_key"] = _get_private_key()
+
+    return config
 
 
 def get_connection() -> SnowflakeConnection:
