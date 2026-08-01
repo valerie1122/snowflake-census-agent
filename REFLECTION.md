@@ -61,6 +61,36 @@ For production deployment, would add:
 
 ## Technical Decisions and Tradeoffs
 
+### Why Streamlit (not FastAPI + React)
+**Decision**: Used Streamlit for the entire web interface instead of a separate backend/frontend.
+
+**Tradeoff**: Less flexibility and customization, but:
+- Rapid development (hours, not days)
+- Built-in streaming support
+- Native chat UI components
+- One-click deployment to Streamlit Cloud
+- Perfect for a 24-hour assignment where shipping matters
+
+### Why Text-to-SQL (not RAG/Vector Search)
+**Decision**: Used LLM to generate SQL queries directly against Snowflake.
+
+**Tradeoff**: Requires careful prompt engineering and schema context, but:
+- Census data is structured and tabular - SQL is the natural query language
+- No need to embed/chunk data or manage a vector database
+- Exact numeric aggregations (SUM, AVG) are reliable
+- Users can see the actual SQL for transparency
+- RAG would be overkill for structured data queries
+
+### Why Static Schema Metadata (not Dynamic Discovery)
+**Decision**: Hardcoded table topics and key fields in `db/schema.py` instead of querying `INFORMATION_SCHEMA` at runtime.
+
+**Tradeoff**: Schema changes require code updates, but:
+- Faster response times (no metadata queries)
+- Curated field descriptions are more useful than raw column names
+- Census schema is stable (doesn't change frequently)
+- Allows keyword-to-table mapping for routing
+- Production would add a schema sync job for updates
+
 ### Using Keyword Matching for Topic Routing
 **Decision**: Used keyword-based matching instead of LLM classification for topic routing.
 
