@@ -4,7 +4,29 @@ Schema metadata module for US Census Bureau ACS data.
 Provides table topic mappings, state FIPS codes, and helper functions for LLM context.
 """
 
+import csv
+from pathlib import Path
 from typing import TypedDict
+
+# Load field descriptions from metadata CSV
+FIELD_DESCRIPTIONS: dict[str, dict] = {}
+_csv_path = Path(__file__).parent.parent / "field_descriptions.csv"
+if _csv_path.exists():
+    with open(_csv_path, "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            field_id = row.get("TABLE_ID", "")
+            if field_id:
+                FIELD_DESCRIPTIONS[field_id] = {
+                    "table": row.get("TABLE_NUMBER", ""),
+                    "title": row.get("TABLE_TITLE", ""),
+                    "topic": row.get("TABLE_TOPICS", ""),
+                    "description": " > ".join(filter(None, [
+                        row.get("FIELD_LEVEL_3", ""),
+                        row.get("FIELD_LEVEL_4", ""),
+                        row.get("FIELD_LEVEL_5", ""),
+                    ]))
+                }
 
 
 class TableTopic(TypedDict):
@@ -283,6 +305,29 @@ DEFAULT_YEAR = "2020"
 AVAILABLE_YEARS = ["2019", "2020"]
 
 
+def get_field_descriptions_for_table(table_code: str, limit: int = 10) -> list[str]:
+    """
+    Get field descriptions for a specific table from metadata.
+
+    Args:
+        table_code: Table code (e.g., "B01", "B19")
+        limit: Max number of fields to return
+
+    Returns:
+        List of field description strings
+    """
+    descriptions = []
+    table_upper = table_code.upper()
+
+    for field_id, info in FIELD_DESCRIPTIONS.items():
+        if info.get("table", "").upper() == table_upper or field_id.upper().startswith(table_upper):
+            desc = info.get("description", "")
+            if desc and len(descriptions) < limit:
+                descriptions.append(f'"{field_id}": {desc}')
+
+    return descriptions
+
+
 def get_schema_context(topics: list[str]) -> str:
     """
     Generate schema context for LLM based on requested topics.
@@ -299,10 +344,16 @@ def get_schema_context(topics: list[str]) -> str:
         topic_upper = topic.upper()
         if topic_upper in TABLE_TOPICS:
             info = TABLE_TOPICS[topic_upper]
+
+            # Get actual field descriptions from metadata
+            field_descs = get_field_descriptions_for_table(topic_upper)
+            field_info = "\n    ".join(field_descs) if field_descs else "See key_fields above"
+
             context_parts.append(
                 f"Table {topic_upper} - {info['name']}:\n"
                 f"  Description: {info['description']}\n"
                 f"  Key fields: {', '.join(info['key_fields'])}\n"
+                f"  Sample fields from metadata:\n    {field_info}\n"
                 f"  Table name format: {{year}}_CBG_{topic_upper} (e.g., 2020_CBG_{topic_upper})"
             )
 
@@ -313,8 +364,8 @@ def get_schema_context(topics: list[str]) -> str:
         "Census Data Schema Context:\n"
         "- Primary key: CENSUS_BLOCK_GROUP (format: {state_fips}{county_fips}{tract}{block})\n"
         "- Field suffixes: 'e' = estimate, 'm' = margin of error\n"
-        "- Use METADATA_CBG_FIELD_DESCRIPTIONS for detailed field info\n"
-        "- Use METADATA_CBG_FIPS_CODES for state/county lookups\n\n"
+        "- Full field descriptions available in METADATA_CBG_FIELD_DESCRIPTIONS table\n"
+        "- State/county FIPS codes available in METADATA_CBG_FIPS_CODES table\n\n"
     )
 
     return header + "\n\n".join(context_parts)
