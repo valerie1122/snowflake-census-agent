@@ -154,3 +154,17 @@ The app queries the Snowflake Marketplace dataset "US Census Bureau: ACS Demogra
 - Geographic queries below state level (cities, counties) use approximate matching
 - Median aggregations across regions are weighted estimates, not true medians
 - Only supports 2019 and 2020 data years
+
+## Assumptions & Interpretations
+
+During development, I made the following interpretations of the requirements:
+
+1. **"Preserve conversation context"**: Interpreted as passing conversation history to the LLM for follow-up questions, not as persistent storage across sessions.
+
+2. **"Guardrails for off-topic responses"**: Implemented as a two-tier system - fast pre-checks for obvious cases (greetings, empty queries) plus LLM-based validation for nuanced off-topic detection.
+
+3. **"60 second response time"**: Set query timeout to 55 seconds to leave margin. Used streaming to show progress immediately rather than waiting for full response.
+
+4. **"Graceful degradation"**: Chose to show user-friendly error messages rather than technical errors. On guardrail API failure, allow query through (fail open) rather than blocking.
+
+5. **"Ambiguous queries"**: Added clarification prompts when users ask data questions without specifying location, rather than assuming national data or failing silently.
