@@ -93,11 +93,9 @@ def execute_query_safe(sql: str) -> tuple[list[dict] | None, str | None]:
         results = execute_query(sql)
         return results, None
     except ProgrammingError as e:
-        # SQL syntax errors, timeout, invalid queries
-        return None, f"Query error: {e.msg}"
+        # 改成友好消息
+        return None, "I had trouble processing that query. Could you try rephrasing your question?"
     except DatabaseError as e:
-        # Connection errors
-        return None, f"Database error: {e.msg}"
+        return None, "I'm having trouble connecting to the database. Please try again in a moment."
     except Exception as e:
-        # Unexpected errors
-        return None, f"Unexpected error: {str(e)}"
+        return None, "Something unexpected happened. Please try again."

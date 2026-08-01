@@ -414,3 +414,18 @@ def get_state_fips(state: str) -> str | None:
         FIPS code or None if not found
     """
     return STATE_FIPS.get(state.lower())
+
+
+def detect_year(question: str) -> str | None:
+    """
+    Detect year mentioned in question.
+
+    Returns:
+        Year string ("2019" or "2020") if found, None otherwise
+    """
+    import re
+    # Match 2019 or 2020
+    match = re.search(r'\b(2019|2020)\b', question)
+    if match:
+        return match.group(1)
+    return None
