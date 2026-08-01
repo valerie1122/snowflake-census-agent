@@ -22,11 +22,12 @@ The automatic SQL fix-and-retry saves many queries that would otherwise fail due
 
 ## What I Would Improve With More Time
 
-### 1. Schema Accuracy
-The `key_fields` in `db/schema.py` were populated based on Census Bureau documentation but haven't been fully verified against the actual Snowflake schema. Some field names may be incorrect. I would:
+### 1. Schema Accuracy & Metadata Tables
+The `key_fields` in `db/schema.py` were populated based on Census Bureau documentation but haven't been fully verified against the actual Snowflake schema. Additionally, I did not fully leverage the `METADATA_CBG_FIELD_DESCRIPTIONS` and `METADATA_CBG_FIPS_CODES` tables that are available in the dataset. I would:
 - Query `INFORMATION_SCHEMA.COLUMNS` for each table
-- Validate every field reference
-- Build a script to auto-generate schema metadata
+- Use `METADATA_CBG_FIELD_DESCRIPTIONS` for accurate field descriptions
+- Use `METADATA_CBG_FIPS_CODES` for precise geographic matching
+- Build a script to auto-generate schema metadata from these tables
 
 ### 2. Geographic Query Support
 Currently, city-level queries are approximate (match city name to state, not actual boundaries). Improvements:
