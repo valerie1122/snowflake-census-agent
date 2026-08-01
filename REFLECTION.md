@@ -108,6 +108,73 @@ For production deployment, would add:
 - **Result Truncation**: Limited to 20 rows to keep LLM context manageable
 - **History Limit**: Last 10 messages (5 turns) to prevent context overflow
 
+## Edge Cases and Failure Modes
+
+### Identified and Handled
+1. **Empty/short queries**: Pre-check rejects queries < 3 characters
+2. **Greetings**: Detected and redirected with friendly message
+3. **Off-topic queries**: LLM-based guardrails reject and explain
+4. **SQL syntax errors**: Automatic retry with fix attempt
+5. **Database connection failures**: User-friendly error message
+6. **API unavailability**: Graceful degradation (allow query through)
+
+### Identified but Not Fully Addressed
+1. **Ambiguous queries**: "What's the income?" without location context - currently returns national data, could prompt for clarification
+2. **Queries about unavailable data**: e.g., "What's the crime rate?" - not in Census dataset, would need explicit rejection
+3. **Complex multi-table queries**: e.g., "Show income by education level" - requires JOINs which may fail
+4. **Temporal comparisons**: "How has population changed?" - only 2019/2020 data available
+5. **Very large result sets**: Could timeout on queries returning millions of rows
+
+### Edge Cases for Future Work
+- Handling typos in state/city names
+- Supporting natural date ranges ("last 5 years")
+- Multi-language support
+- Clarification dialogs for ambiguous queries
+
+## Testing Strategy and Tradeoffs
+
+### Approach
+I chose a **mock-heavy unit testing** strategy with 50 tests covering:
+- Pre-check logic (no API calls)
+- Schema utilities (pure functions)
+- Topic routing (keyword matching)
+- SQL generation (mocked LLM responses)
+- Pipeline integration (mocked components)
+
+### Why This Approach
+1. **Fast execution**: Tests run in ~2 seconds without API calls
+2. **Deterministic**: No flaky tests from API variability
+3. **Cost-effective**: No API costs during test runs
+4. **CI-friendly**: Can run in any environment
+
+### Tradeoffs
+- **Less realistic**: Mocked responses may not match real LLM behavior
+- **Missing integration coverage**: Real Snowflake queries not tested
+- **Prompt changes require test updates**: If prompts change, mock responses may become invalid
+
+### What I Would Add
+1. **End-to-end tests**: Real queries against Snowflake (run sparingly)
+2. **Golden file tests**: Store expected SQL outputs and compare
+3. **Load testing**: Verify 60-second response time under load
+4. **Prompt regression tests**: Ensure prompt changes don't break SQL generation
+
+## Development Process
+
+1. **Planning**: Read requirements, designed pipeline architecture
+2. **Data exploration**: Connected to Snowflake, explored schema, sampled tables
+3. **Core pipeline**: Built guardrails → router → SQL generator → answer generator
+4. **Integration**: Connected components, added streaming
+5. **Error handling**: Added graceful degradation, user-friendly messages
+6. **Testing**: Wrote 50 unit/integration tests
+7. **Documentation**: README, REFLECTION
+8. **Deployment**: Streamlit Cloud with key-pair auth
+
+**AI Tools Used**: Claude Code for code generation, debugging, and iteration. The AI helped with:
+- Snowflake connector authentication issues (MFA → key-pair)
+- Prompt engineering for SQL generation
+- Test scaffolding
+- Documentation writing
+
 ## What I Learned
 
 1. **Snowflake Case Sensitivity**: Snowflake identifiers with mixed case must be quoted. Unquoted identifiers are automatically uppercased, causing "invalid identifier" errors for columns like `B01001e1`.

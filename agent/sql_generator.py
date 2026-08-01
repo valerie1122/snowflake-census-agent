@@ -38,6 +38,13 @@ Return ONLY valid SQL. No explanations, no markdown, no backticks. Just the raw 
 3. Is aggregation needed? (SUM for totals, AVG for averages)
 4. Is the WHERE clause correct for geographic filtering?
 5. For median values across regions, use weighted average: SUM(median * count) / SUM(count)
+6. If no geographic filter is specified, query ALL data (national level) - don't assume a state
+
+## Handling Ambiguous Queries
+
+- If user asks about "income" or "population" without specifying a location, return NATIONAL totals
+- Use METADATA_CBG_FIELD_DESCRIPTIONS table for field name lookups if unsure
+- Use METADATA_CBG_FIPS_CODES table for state/county FIPS code lookups
 
 ## Examples
 
